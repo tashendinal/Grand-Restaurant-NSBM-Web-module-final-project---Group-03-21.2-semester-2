@@ -1,107 +1,318 @@
-/*==================== SHOW MENU ====================*/
-const showMenu = (toggleId, navId) =>{
-    const toggle = document.getElementById(toggleId),
-    nav = document.getElementById(navId)
-    
-    // Validate that variables exist
-    if(toggle && nav){
-        toggle.addEventListener('click', ()=>{
-            // We add the show-menu class to the div tag with the nav__menu class
-            nav.classList.toggle('show-menu')
-        })
-    }
-}
-showMenu('nav-toggle','nav-menu')
+(function ($) {
+    "use strict";
 
-/*==================== REMOVE MENU MOBILE ====================*/
-const navLink = document.querySelectorAll('.nav__link')
+    /*--
+        Commons Variables
+    -----------------------------------*/
+    var $window = $(window),
+        $body = $('body'),
+        $mainWrapper = $('.main-wrapper'),
+        $headerHeight = $('.header').outerHeight();
 
-function linkAction(){
-    const navMenu = document.getElementById('nav-menu')
-    // When we click on each nav__link, we remove the show-menu class
-    navMenu.classList.remove('show-menu')
-}
-navLink.forEach(n => n.addEventListener('click', linkAction))
+    /*--
+        Custom script to call Background
+        Image form html data attribute
+    -----------------------------------*/
+    $('[data-bg-image]').each(function () {
+        var $this = $(this),
+            $image = $this.data('bg-image');
+        $this.css('background-image', 'url(' + $image + ')');
 
-/*==================== SCROLL SECTIONS ACTIVE LINK ====================*/
-const sections = document.querySelectorAll('section[id]')
+    });
 
-function scrollActive(){
-    const scrollY = window.pageYOffset
-
-    sections.forEach(current =>{
-        const sectionHeight = current.offsetHeight
-        const sectionTop = current.offsetTop - 50;
-        sectionId = current.getAttribute('id')
-
-        if(scrollY > sectionTop && scrollY <= sectionTop + sectionHeight){
-            document.querySelector('.nav__menu a[href*=' + sectionId + ']').classList.add('active-link')
-        }else{
-            document.querySelector('.nav__menu a[href*=' + sectionId + ']').classList.remove('active-link')
-        }
+    /*--
+        Parallax
+    -----------------------------------*/
+    $('.bg-parallax').each(function () {
+        $(this).parallax("50%", 0.5);
     })
-}
-window.addEventListener('scroll', scrollActive)
 
-/*==================== CHANGE BACKGROUND HEADER ====================*/ 
-function scrollHeader(){
-    const nav = document.getElementById('header')
-    // When the scroll is greater than 200 viewport height, add the scroll-header class to the header tag
-    if(this.scrollY >= 200) nav.classList.add('scroll-header'); else nav.classList.remove('scroll-header')
-}
-window.addEventListener('scroll', scrollHeader)
+    /*--
+        Header Sticky
+    -----------------------------------*/
+    $window.on('scroll', function () {
+        if ($window.scrollTop() > 350) {
+            $('.header').addClass('is-sticky');
+        } else {
+            $('.header').removeClass('is-sticky');
+        }
+    });
 
-/*==================== SHOW SCROLL TOP ====================*/ 
-function scrollTop(){
-    const scrollTop = document.getElementById('scroll-top');
-    // When the scroll is higher than 560 viewport height, add the show-scroll class to the a tag with the scroll-top class
-    if(this.scrollY >= 560) scrollTop.classList.add('show-scroll'); else scrollTop.classList.remove('show-scroll')
-}
-window.addEventListener('scroll', scrollTop)
+    /*--
+		Mobile OffCanvas Open & Close
+    -----------------------------------*/
+    function mobileOffCanvasToggle() {
+        var $offCanvas = $('#offcanvas'),
+            $offCanvasOverlay = $('.offcanvas-overlay');
+        $('.offcanvas-toggle').on('click', function () {
+            $offCanvas.addClass('open');
+            $offCanvasOverlay.fadeIn();
+            $body.addClass('offcanvas-open');
+        });
+        $('.offcanvas-close, .offcanvas-overlay').on('click', function () {
+            $offCanvas.removeClass('open');
+            $offCanvasOverlay.fadeOut();
+            $body.removeClass('offcanvas-open');
+        });
+    }
+    mobileOffCanvasToggle();
 
-/*==================== DARK LIGHT THEME ====================*/ 
-const themeButton = document.getElementById('theme-button')
-const darkTheme = 'dark-theme'
-const iconTheme = 'bx-sun'
+    /*--
+        Off Canvas Menu
+    -----------------------------------*/
+    function mobileOffCanvasMenu() {
+        var $offCanvasNav = $('.offcanvas-menu'),
+            $offCanvasNavSubMenu = $offCanvasNav.find('.sub-menu');
 
-// Previously selected topic (if user selected)
-const selectedTheme = localStorage.getItem('selected-theme')
-const selectedIcon = localStorage.getItem('selected-icon')
+        /*Add Toggle Button With Off Canvas Sub Menu*/
+        $offCanvasNavSubMenu.parent().prepend('<span class="menu-expand"><i></i></span>');
 
-// We obtain the current theme that the interface has by validating the dark-theme class
-const getCurrentTheme = () => document.body.classList.contains(darkTheme) ? 'dark' : 'light'
-const getCurrentIcon = () => themeButton.classList.contains(iconTheme) ? 'bx-moon' : 'bx-sun'
+        /*Category Sub Menu Toggle*/
+        $offCanvasNav.on('click', 'li a, li .menu-expand', function (e) {
+            var $this = $(this);
+            if ($this.siblings('.sub-menu').length && ($this.attr('href') === '#' || $this.hasClass('menu-expand'))) {
+                e.preventDefault();
+                if ($this.siblings('ul:visible').length) {
+                    $this.parent('li').removeClass('active');
+                    $this.siblings('ul').slideUp();
+                    $this.parent('li').find('li').removeClass('active');
+                    $this.parent('li').find('ul:visible').slideUp();
+                } else {
+                    $this.parent('li').addClass('active');
+                    $this.closest('li').siblings('li').removeClass('active').find('li').removeClass('active');
+                    $this.closest('li').siblings('li').find('ul:visible').slideUp();
+                    $this.siblings('ul').slideDown();
+                }
+            }
+        });
+    }
+    mobileOffCanvasMenu();
 
-// We validate if the user previously chose a topic
-if (selectedTheme) {
-  // If the validation is fulfilled, we ask what the issue was to know if we activated or deactivated the dark
-  document.body.classList[selectedTheme === 'dark' ? 'add' : 'remove'](darkTheme)
-  themeButton.classList[selectedIcon === 'bx-moon' ? 'add' : 'remove'](iconTheme)
-}
+    /*--
+        Login & Register Modal
+    -----------------------------------*/
+    $('#loginSignupModal').on('show.bs.modal', function (event) {
+        var $button = $(event.relatedTarget),
+            $target = $button.data('target-sub'),
+            $modal = $(this);
+        $modal.find('.nav-link').removeClass('active');
+        $modal.find('.nav-link[href="' + $target + '"]').addClass('active');
+        $modal.find('.tab-pane').removeClass('active show');
+        $modal.find('.tab-pane' + $target).addClass('active show');
+    })
 
-// Activate / deactivate the theme manually with the button
-themeButton.addEventListener('click', () => {
-    // Add or remove the dark / icon theme
-    document.body.classList.toggle(darkTheme)
-    themeButton.classList.toggle(iconTheme)
-    // We save the theme and the current icon that the user chose
-    localStorage.setItem('selected-theme', getCurrentTheme())
-    localStorage.setItem('selected-icon', getCurrentIcon())
-})
+    /*--
+        Slick Slider Activation
+    -----------------------------------*/
 
-/*==================== SCROLL REVEAL ANIMATION ====================*/
-const sr = ScrollReveal({
-    origin: 'top',
-    distance: '30px',
-    duration: 2000,
-    reset: true
-});
+    // Company Slider
+    $('.company-slider').slick({
+        slidesToShow: 6,
+        slidesToScroll: 1,
+        arrows: true,
+        autoplay: true,
+        prevArrow: '<button class="slick-prev"><i class="fa fa-angle-left"></i></button>',
+        nextArrow: '<button class="slick-next"><i class="fa fa-angle-right"></i></button>',
+        responsive: [{
+            breakpoint: 1200,
+            settings: {
+                slidesToShow: 5
+            }
+        }, {
+            breakpoint: 992,
+            settings: {
+                slidesToShow: 4
+            }
+        }, {
+            breakpoint: 767,
+            settings: {
+                slidesToShow: 3,
+                arrows: false
+            }
+        }, {
+            breakpoint: 480,
+            settings: {
+                slidesToShow: 2,
+                arrows: false
+            }
+        }]
+    });
 
-sr.reveal(`.home__data, .home__img,
-            .about__data, .about__img,
-            .services__content, .menu__content,
-            .app__data, .app__img,
-            .contact__data, .contact__button,
-            .footer__content`, {
-    interval: 200
-})
+    // Job Category Slider
+    $('.job-category-slider').slick({
+        slidesToShow: 5,
+        slidesToScroll: 1,
+        arrows: true,
+        autoplay: true,
+        prevArrow: '<button class="slick-prev"><i class="fa fa-angle-left"></i></button>',
+        nextArrow: '<button class="slick-next"><i class="fa fa-angle-right"></i></button>',
+        responsive: [{
+            breakpoint: 1200,
+            settings: {
+                slidesToShow: 4
+            }
+        }, {
+            breakpoint: 992,
+            settings: {
+                slidesToShow: 3
+            }
+        }, {
+            breakpoint: 767,
+            settings: {
+                slidesToShow: 2,
+                arrows: false
+            }
+        }, {
+            breakpoint: 480,
+            settings: {
+                slidesToShow: 1
+            }
+        }]
+    });
+
+    // Testimonial Slider
+    $('.testimonial-slider').slick({
+        slidesToShow: 1,
+        slidesToScroll: 1,
+        arrows: true,
+        autoplay: true,
+        prevArrow: '<button class="slick-prev"><i class="fa fa-angle-left"></i></button>',
+        nextArrow: '<button class="slick-next"><i class="fa fa-angle-right"></i></button>',
+        responsive: [{
+            breakpoint: 767,
+            settings: {
+                slidesToShow: 1,
+                arrows: false
+            }
+        }]
+    });
+
+    // Blog Slider
+    $('.blog-slider').slick({
+        slidesToShow: 3,
+        slidesToScroll: 1,
+        arrows: false,
+        autoplay: true,
+        prevArrow: '<button class="slick-prev"><i class="fa fa-angle-left"></i></button>',
+        nextArrow: '<button class="slick-next"><i class="fa fa-angle-right"></i></button>',
+        responsive: [{
+            breakpoint: 992,
+            settings: {
+                slidesToShow: 2
+            }
+        }, {
+            breakpoint: 767,
+            settings: {
+                slidesToShow: 2,
+                arrows: false
+            }
+        }, {
+            breakpoint: 767,
+            settings: {
+                slidesToShow: 2,
+                arrows: false
+            }
+        }, {
+            breakpoint: 575,
+            settings: {
+                slidesToShow: 1
+            }
+        }]
+    });
+
+    /*--
+        Counter Up
+    -----------------------------------*/
+    $('.counter').counterUp({
+        time: 3000
+    });
+
+    /*--
+        Salary Range (Ion Range Slider)
+    -----------------------------------*/
+    $("#salary-range").ionRangeSlider({
+        type: "double",
+        min: 3000,
+        max: 25000,
+        step: 500,
+        from: 7000,
+        to: 15000,
+        grid: false,
+    });
+
+    /*--
+        MailChimp
+    -----------------------------------*/
+    $('#mc-form').ajaxChimp({
+        language: 'en',
+        callback: mailChimpResponse,
+        // ADD YOUR MAILCHIMP URL BELOW HERE!
+        url: 'http://devitems.us11.list-manage.com/subscribe/post?u=6bbb9b6f5827bd842d9640c82&amp;id=05d85f18ef'
+
+    });
+
+    function mailChimpResponse(resp) {
+        if (resp.result === 'success') {
+            $('.mailchimp-success').html('' + resp.msg).fadeIn(900);
+            $('.mailchimp-error').fadeOut(400);
+        } else if (resp.result === 'error') {
+            $('.mailchimp-error').html('' + resp.msg).fadeIn(900);
+        }
+    }
+
+    /*--
+        Scroll Up
+    -----------------------------------*/
+    $.scrollUp({
+        scrollText: '<i class="fa fa-long-arrow-up"></i>',
+    });
+
+    /*--
+        Ajax Contact Form JS
+    ------------------------*/
+    $(function () {
+        // Get the form.
+        var form = $('#contact-form');
+        // Get the messages div.
+        var formMessages = $('.form-message');
+        // Set up an event listener for the contact form.
+        $(form).submit(function (e) {
+            // Stop the browser from submitting the form.
+            e.preventDefault();
+            // Serialize the form data.
+            var formData = $(form).serialize();
+            // Submit the form using AJAX.
+            $.ajax({
+                type: 'POST',
+                url: $(form).attr('action'),
+                data: formData,
+            })
+            .done(function (response) {
+            // Make sure that the formMessages div has the 'success' class.
+            $(formMessages).removeClass('error');
+            $(formMessages).addClass('success');
+
+            // Set the message text.
+            $(formMessages).text(response);
+
+            // Clear the form.
+            $('#contact-form input,#contact-form textarea').val('');
+            })
+            .fail(function (data) {
+            // Make sure that the formMessages div has the 'error' class.
+            $(formMessages).removeClass('success');
+            $(formMessages).addClass('error');
+
+            // Set the message text.
+            if (data.responseText !== '') {
+                $(formMessages).text(data.responseText);
+            } else {
+                $(formMessages).text(
+                    'Oops! An error occured and your message could not be sent.'
+                );
+            }
+            });
+        });
+    });
+
+})(jQuery);
